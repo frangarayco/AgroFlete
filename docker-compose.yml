@@ -10,28 +10,6 @@
 
 services:
 
-  # ─── PostgreSQL ─────────────────────────────────
-  postgres:
-    image: postgres:16-alpine
-    container_name: agroflete_db
-    restart: unless-stopped
-    environment:
-      POSTGRES_DB: agroflete
-      POSTGRES_USER: agroflete_user
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-dev_password_change_in_prod}
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-      - ./infra/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U agroflete_user -d agroflete"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    networks:
-      - agroflete_net
-
   # ─── Redis ──────────────────────────────────────
   redis:
     image: redis:7-alpine
@@ -58,15 +36,12 @@ services:
     container_name: agroflete_api
     restart: unless-stopped
     environment:
-      DB_HOST: postgres
-      DB_PORT: 5432
+      # POSTGRES (Supabase) Database URL goes in the .env file
       REDIS_HOST: redis
       REDIS_PORT: 6379
     ports:
       - "8000:8000"
     depends_on:
-      postgres:
-        condition: service_healthy
       redis:
         condition: service_healthy
     healthcheck:
@@ -81,8 +56,6 @@ services:
       - agroflete_net
 
 volumes:
-  postgres_data:
-    name: agroflete_postgres_data
   redis_data:
     name: agroflete_redis_data
 

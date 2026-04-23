@@ -1,10 +1,9 @@
-﻿-- =============================================
+voy-- =============================================
 -- AgroFlete - Inicialización de base de datos
 -- =============================================
 
 -- Extensiones necesarias
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
-CREATE EXTENSION IF NOT EXISTS "postgis"; -- Para geolocalización (opcional, instalar si disponible)
 
 -- Enum de roles de usuario
 CREATE TYPE user_role AS ENUM ('admin', 'transporter', 'requester');
