@@ -1,0 +1,16 @@
+{
+  "name": "agroflete",
+  "version": "1.0.0",
+  "private": true,
+  "description": "AgroFlete - Plataforma de marketplace de fletes agropecuarios",
+  "scripts": {
+    "backend": "cd apps/backend && uvicorn app.main:app --reload",
+    "mobile": "pnpm --filter mobile start",
+    "docker:up": "docker-compose up -d --build",
+    "docker:down": "docker-compose down",
+    "docker:logs": "docker-compose logs -f"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.0"
+  }
+}

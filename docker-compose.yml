@@ -1,0 +1,92 @@
+# =============================================
+# AgroFlete - Docker Compose
+# =============================================
+# Uso:
+#   Desarrollo:  docker compose up -d
+#   Producción:  docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+#   Logs:        docker compose logs -f
+#   Detener:     docker compose down
+#   Reset DB:    docker compose down -v && docker compose up -d
+
+services:
+
+  # ─── PostgreSQL ─────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    container_name: agroflete_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: agroflete
+      POSTGRES_USER: agroflete_user
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-dev_password_change_in_prod}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./infra/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U agroflete_user -d agroflete"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - agroflete_net
+
+  # ─── Redis ──────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: agroflete_redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-dev_redis_pass}
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "--pass", "${REDIS_PASSWORD:-dev_redis_pass}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - agroflete_net
+
+  # ─── Backend (FastAPI - Python) ───────────────────────────
+  backend:
+    build:
+      context: ./apps/backend
+      dockerfile: Dockerfile
+    container_name: agroflete_api
+    restart: unless-stopped
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    volumes:
+      - ./apps/backend:/app  # Para hot-reload en desarrollo
+    networks:
+      - agroflete_net
+
+volumes:
+  postgres_data:
+    name: agroflete_postgres_data
+  redis_data:
+    name: agroflete_redis_data
+
+networks:
+  agroflete_net:
+    name: agroflete_network
+    driver: bridge
