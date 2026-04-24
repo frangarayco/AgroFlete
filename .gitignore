@@ -1,4 +1,4 @@
-﻿# Dependencies
+# Dependencies
 node_modules/
 .pnp
 .pnp.js
@@ -46,3 +46,8 @@ coverage/
 
 # Docker
 docker-compose.override.yml
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
